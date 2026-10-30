@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quiz Tôn Giáo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500;600;700&amp;family=Work+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    :root { --navy:#102b3a; --navy-deep:#0a202d; --gold:#d4ae69; --ivory:#faf7ef; --ink:#18313b; --muted:#60717a; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); font-family:"Work Sans",sans-serif; }
+    .app-shell { width:100%; min-height:100vh; background:var(--ivory); }
+    .hero { position:relative; overflow:hidden; background:radial-gradient(circle at 75% 15%,#254b58 0%,#102b3a 49%,#0a202d 100%); color:#fff; }
+    .hero::before,.hero::after { content:""; position:absolute; width:360px; height:360px; border:1px solid rgba(212,174,105,.22); transform:rotate(45deg); pointer-events:none; }
+    .hero::before { right:-95px; top:-245px; box-shadow:0 0 0 35px rgba(212,174,105,.035),0 0 0 70px rgba(212,174,105,.025); }
+    .hero::after { left:-220px; bottom:-290px; }
+    .eyebrow { color:#e8c887; letter-spacing:.22em; text-transform:uppercase; font-size:12px; font-weight:700; }
+    .display { font-family:Alegreya,serif; line-height:1.04; }
+    .gold-line { height:2px; width:64px; background:var(--gold); }
+    .surface { background:#fffefa; border:1px solid #e9e4d7; box-shadow:0 20px 60px rgba(16,43,58,.08); }
+    .option { width:100%; display:flex; align-items:flex-start; gap:15px; text-align:left; padding:17px 19px; border:1.5px solid #dce4e2; border-radius:15px; background:#fff; transition:background .18s,border-color .18s,transform .18s; cursor:pointer; }
+    .option:hover:not(:disabled) { border-color:#b89a61; background:#fffcf5; transform:translateY(-1px); }
+    .option:disabled { cursor:default; }
+    .option-label { flex:none; display:grid; place-items:center; width:32px; height:32px; border-radius:9px; background:#f2f1eb; font-weight:700; color:var(--navy); }
+    .option-text { flex:1; line-height:1.55; padding-top:3px; }
+    .option-mark { flex:none; font-size:23px; font-weight:700; line-height:30px; width:30px; text-align:center; }
+    .option.wrong { border-color:#d76464; background:#fff1ee; opacity:0.8; }
+    .option.wrong .option-label { background:#fce0db; color:#a92d30; }
+    .option.wrong .option-mark { color:#bd3336; }
+    .option.correct { border-color:#27835b; background:#ecf8ee; }
+    .option.correct .option-label { background:#d6efdd; color:#176c49; }
+    .option.correct .option-mark { color:#187a50; }
+    .feedback { min-height:52px; font-weight: 500; }
+    .feedback.good { color:#166d49; background:#ecf8ee; border:1px solid #c2e8ca; }
+    .feedback.bad { color:#a92d30; background:#fff1ee; border:1px solid #f8c9c9; }
+    .primary { background:#d4ae69; color:#102b3a; transition:background .18s,transform .18s; cursor:pointer; }
+    .primary:hover { background:#ecc580; transform:translateY(-1px); }
+    .question-panel { animation:enter .35s ease both; }
+    @keyframes enter { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  </style>
+  <script src="https://cdn.tailwindcss.com/3.4.17" type="text/javascript"></script>
+</head>
+<body class="app-shell">
+  <header class="hero w-full">
+   <div class="relative z-10 max-w-5xl mx-auto px-5 sm:px-9 py-10 sm:py-14">
+    <p class="eyebrow mb-5">KHÔNG GIAN HỌC TẬP · 10 CÂU HỎI</p>
+    <div class="gold-line mb-6" aria-hidden="true"></div>
+    <h1 class="display font-semibold max-w-3xl text-3xl sm:text-4xl text-white">Khám phá kiến thức về tôn giáo</h1>
+    <p class="mt-5 max-w-2xl leading-relaxed text-gray-200">Một hành trình ôn tập ngắn, rõ ràng và tôn trọng sự đa dạng trong đời sống tín ngưỡng.</p>
+   </div>
+  </header>
+  <main class="w-full max-w-5xl mx-auto px-5 sm:px-9 py-8 sm:py-12">
+   <section id="welcome" class="surface rounded-3xl p-7 sm:p-11">
+    <span class="eyebrow text-amber-700">BẮT ĐẦU HỌC</span>
+    <h2 class="display mt-3 font-semibold text-2xl text-slate-800">Sẵn sàng thử sức?</h2>
+    <p class="mt-4 leading-relaxed max-w-2xl text-slate-600">Chọn một phương án. Nếu chọn sai, bạn có thể bấm thử đáp án khác cho đến khi chọn đúng để chuyển câu tiếp theo!</p>
+    <button id="start-button" type="button" class="primary mt-7 rounded-xl px-7 py-3 font-bold">Bắt đầu 10 câu hỏi →</button>
+   </section>
+
+   <section id="game" class="hidden" aria-label="Câu hỏi trắc nghiệm">
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-5">
+     <div>
+      <p class="eyebrow text-amber-700">TIẾN ĐỘ HỌC TẬP</p>
+      <h2 id="counter" class="display font-semibold mt-1 text-3xl text-slate-800">Câu 1 / 10</h2>
+     </div>
+     <div class="rounded-xl bg-[#e9eee9] px-5 py-3 font-semibold text-slate-700">
+      <span>Đã vượt qua:</span> <span id="score">0 / 10</span>
+     </div>
+    </div>
+    <div class="w-full h-2 rounded-full bg-[#e2e9e5] overflow-hidden mb-7">
+     <div id="progress-fill" class="h-full rounded-full transition-all duration-300 w-0 bg-emerald-600"></div>
+    </div>
+    
+    <article class="surface rounded-3xl p-5 sm:p-9">
+     <div class="flex items-center gap-3 mb-5">
+      <span id="question-chip" class="rounded-full px-3 py-1 font-bold bg-amber-100 text-amber-800">CÂU 01</span> 
+      <span class="text-slate-500">Chọn một đáp án</span>
+     </div>
+     
+     <div id="question-list">
+      <!-- Câu 1 -->
+      <section class="question-panel" data-question="0">
+       <h3 class="display font-semibold mb-7 text-lg text-slate-800">1. Trong lý luận của chủ nghĩa Mác-Lênin, bản chất của tôn giáo được xác định là một hình thái ý thức xã hội. Sự phản ánh của tôn giáo đối với hiện thực khách quan có đặc điểm cốt lõi nào sau đây?</h3>
+       <div class="grid gap-3">
+        <button type="button" class="option" data-choice="A"><span class="option-label">A</span><span class="option-text">Phản ánh trực tiếp, chính xác các quy luật vận động khách quan của tự nhiên và đời sống xã hội.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="B"><span class="option-label">B</span><span class="option-text">Phản ánh mang tính hư ảo, qua đó làm cho các lực lượng tự nhiên và xã hội trở thành siêu nhiên, thần bí.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="C"><span class="option-label">C</span><span class="option-text">Phản ánh bản chất của thế giới khách quan thông qua hệ thống các khái niệm và định luật khoa học.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="D"><span class="option-label">D</span><span class="option-text">Phản ánh hoàn toàn thoát ly khỏi hoạt động sản xuất thực tiễn và đời sống vật chất của con người.</span><span class="option-mark"></span></button>
+       </div>
+      </section>
+
+      <!-- Câu 2 -->
+      <section class="question-panel hidden" data-question="1">
+       <h3 class="display font-semibold mb-7 text-lg text-slate-800">2. Theo quan điểm của chủ nghĩa Mác-Lênin, nguồn gốc thực tiễn sinh ra các quan niệm tôn giáo của con người xuất phát từ đâu?</h3>
+       <div class="grid gap-3">
+        <button type="button" class="option" data-choice="A"><span class="option-label">A</span><span class="option-text">Từ năng lực nhận thức siêu nhiên bẩm sinh có sẵn trong bản chất con người.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="B"><span class="option-label">B</span><span class="option-text">Từ sự tác động và phán truyền trực tiếp của các lực lượng đấng tối cao.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="C"><span class="option-label">C</span><span class="option-text">Từ chính hoạt động sản xuất thực tiễn trong đời sống xã hội của con người.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="D"><span class="option-label">D</span><span class="option-text">Từ sự suy tưởng thuần túy độc lập, tách rời hoàn toàn với điều kiện kinh tế - vật chất.</span><span class="option-mark"></span></button>
+       </div>
+      </section>
+
+      <!-- Câu 3 -->
+      <section class="question-panel hidden" data-question="2">
+       <h3 class="display font-semibold mb-7 text-lg text-slate-800">3. Khi tiếp cận tôn giáo như một thực thể xã hội, yếu tố nào dưới đây thể hiện khía cạnh tổ chức và điều hành các hoạt động tôn giáo?</h3>
+       <div class="grid gap-3">
+        <button type="button" class="option" data-choice="A"><span class="option-label">A</span><span class="option-text">Có tổ chức nhân sự, quản lý điều hành việc đạo.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="B"><span class="option-label">B</span><span class="option-text">Có niềm tin sâu sắc vào đấng siêu nhiên để tôn thờ.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="C"><span class="option-label">C</span><span class="option-text">Có hệ thống giáo thuyết phản ánh thế giới quan và nhân sinh quan.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="D"><span class="option-label">D</span><span class="option-text">Có hệ thống cơ sở thờ tự phục vụ nhu cầu tâm linh.</span><span class="option-mark"></span></button>
+       </div>
+      </section>
+
+      <!-- Câu 4 -->
+      <section class="question-panel hidden" data-question="3">
+       <h3 class="display font-semibold mb-7 text-lg text-slate-800">4. Trong các yếu tố sau, yếu tố nào KHÔNG nằm trong 5 tiêu chí cơ bản xác định tôn giáo là một thực thể xã hội?</h3>
+       <div class="grid gap-3">
+        <button type="button" class="option" data-choice="A"><span class="option-label">A</span><span class="option-text">Có niềm tin sâu sắc vào đấng siêu nhiên, đấng tối cao.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="B"><span class="option-label">B</span><span class="option-text">Có hệ thống giáo thuyết phản ánh thế giới quan, nhân sinh quan.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="C"><span class="option-label">C</span><span class="option-text">Bắt buộc phải có sự phê duyệt và cấp kinh phí hoạt động từ chính quyền nhà nước.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="D"><span class="option-label">D</span><span class="option-text">Có hệ thống cơ sở thờ tự, tổ chức nhân sự quản lý và lượng tín đồ đông đảo.</span><span class="option-mark"></span></button>
+       </div>
+      </section>
+
+      <!-- Câu 5 -->
+      <section class="question-panel hidden" data-question="4">
+       <h3 class="display font-semibold mb-7 text-lg text-slate-800">5. Yếu tố nào giữ vai trò quyết định sự tồn tại và phát triển của các hình thái ý thức xã hội, bao gồm cả tôn giáo?</h3>
+       <div class="grid gap-3">
+        <button type="button" class="option" data-choice="A"><span class="option-label">A</span><span class="option-text">Truyền thông đại chúng</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="B"><span class="option-label">B</span><span class="option-text">Tồn tại xã hội (điều kiện kinh tế - vật chất)</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="C"><span class="option-label">C</span><span class="option-text">Ý chí cá nhân của các thủ lĩnh</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="D"><span class="option-label">D</span><span class="option-text">Các văn bản luật pháp quốc tế</span><span class="option-mark"></span></button>
+       </div>
+      </section>
+
+      <!-- Câu 6 -->
+      <section class="question-panel hidden" data-question="5">
+       <h3 class="display font-semibold mb-7 text-lg text-slate-800">6. Bản chất của tín ngưỡng, tôn giáo ở Việt Nam có đặc điểm nổi bật nào?</h3>
+       <div class="grid gap-3">
+        <button type="button" class="option" data-choice="A"><span class="option-label">A</span><span class="option-text">Mang tính dung hợp, gắn liền với tinh thần yêu nước và đoàn kết dân tộc.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="B"><span class="option-label">B</span><span class="option-text">Luôn đối lập gay gắt giữa các tôn giáo khác nhau.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="C"><span class="option-label">C</span><span class="option-text">Hoàn toàn do các tôn giáo ngoại nhập chi phối.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="D"><span class="option-label">D</span><span class="option-text">Tách biệt hoàn toàn khỏi đời sống văn hóa lịch sử dân tộc.</span><span class="option-mark"></span></button>
+       </div>
+      </section>
+
+      <!-- Câu 7 -->
+      <section class="question-panel hidden" data-question="6">
+       <h3 class="display font-semibold mb-7 text-lg text-slate-800">7. Nguyên tắc cơ bản nào của Đảng và Nhà nước Việt Nam đối với vấn đề tôn giáo?</h3>
+       <div class="grid gap-3">
+        <button type="button" class="option" data-choice="A"><span class="option-label">A</span><span class="option-text">Cấm mọi hình thức sinh hoạt tôn giáo.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="B"><span class="option-label">B</span><span class="option-text">Tôn trọng và bảo đảm quyền tự do tín ngưỡng, tôn giáo của nhân dân.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="C"><span class="option-label">C</span><span class="option-text">Ưu tiên một tôn giáo nhất định làm quốc giáo.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="D"><span class="option-label">D</span><span class="option-text">Buộc tất cả mọi người phải tham gia một tôn giáo.</span><span class="option-mark"></span></button>
+       </div>
+      </section>
+
+      <!-- Câu 8 -->
+      <section class="question-panel hidden" data-question="7">
+       <h3 class="display font-semibold mb-7 text-lg text-slate-800">8. Hành vi nào bị nghiêm cấm trong hoạt động tín ngưỡng, tôn giáo tại Việt Nam?</h3>
+       <div class="grid gap-3">
+        <button type="button" class="option" data-choice="A"><span class="option-label">A</span><span class="option-text">Tổ chức lễ nghi tôn giáo theo quy định pháp luật.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="B"><span class="option-label">B</span><span class="option-text">Sửa chữa, trùng tu cơ sở thờ tự hợp pháp.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="C"><span class="option-label">C</span><span class="option-text">In ấn giáo lý, giáo luật được cấp phép.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="D"><span class="option-label">D</span><span class="option-text">Lợi dụng tôn giáo để chia rẽ khối đại đoàn kết dân tộc.</span><span class="option-mark"></span></button>
+       </div>
+      </section>
+
+      <!-- Câu 9 -->
+      <section class="question-panel hidden" data-question="8">
+       <h3 class="display font-semibold mb-7 text-lg text-slate-800">9. Chức năng nào của tôn giáo đóng vai trò an ủi, đền bù hụt hẫng về mặt tinh thần cho con người?</h3>
+       <div class="grid gap-3">
+        <button type="button" class="option" data-choice="A"><span class="option-label">A</span><span class="option-text">Chức năng nhận thức</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="B"><span class="option-label">B</span><span class="option-text">Chức năng đền bù hư ảo (đền bù tâm lý)</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="C"><span class="option-label">C</span><span class="option-text">Chức năng thế giới quan</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="D"><span class="option-label">D</span><span class="option-text">Chức năng quản lý hành chính</span><span class="option-mark"></span></button>
+       </div>
+      </section>
+
+      <!-- Câu 10 -->
+      <section class="question-panel hidden" data-question="9">
+       <h3 class="display font-semibold mb-7 text-lg text-slate-800">10. Việc giải quyết vấn đề tôn giáo cần gắn liền với quá trình nào sau đây?</h3>
+       <div class="grid gap-3">
+        <button type="button" class="option" data-choice="A"><span class="option-label">A</span><span class="option-text">Tách rời hoàn toàn khỏi phát triển kinh tế - xã hội.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="B"><span class="option-label">B</span><span class="option-text">Xóa bỏ ngay lập tức mọi cơ sở thờ tự.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="C"><span class="option-label">C</span><span class="option-text">Quá trình xây dựng chủ nghĩa xã hội và nâng cao đời sống vật chất, tinh thần của nhân dân.</span><span class="option-mark"></span></button>
+        <button type="button" class="option" data-choice="D"><span class="option-label">D</span><span class="option-text">Áp đặt mệnh lệnh hành chính để cải tạo tư tưởng.</span><span class="option-mark"></span></button>
+       </div>
+      </section>
+     </div>
+
+     <!-- Thông báo phản hồi và nút điều hướng -->
+     <div id="feedback" class="feedback hidden rounded-xl px-5 py-3 mt-6"></div>
+
+     <div id="action-bar" class="flex justify-end gap-3 mt-6 hidden">
+      <button id="next-btn" type="button" class="primary rounded-xl px-6 py-2.5 font-bold">Câu tiếp theo →</button>
+     </div>
+    </article>
+   </section>
+
+   <!-- Màn hình hoàn thành game -->
+   <section id="result-screen" class="surface rounded-3xl p-7 sm:p-11 hidden text-center">
+    <span class="eyebrow text-amber-700">HOÀN THÀNH</span>
+    <h2 class="display mt-3 font-semibold text-3xl text-slate-800">Chúc mừng bạn đã hoàn thành bài quiz!</h2>
+    <p class="mt-4 text-xl text-slate-600">Bạn đã xuất sắc vượt qua toàn bộ 10 câu hỏi!</p>
+    <button id="restart-btn" type="button" class="primary mt-7 rounded-xl px-7 py-3 font-bold">Làm lại từ đầu ↺</button>
+   </section>
+  </main>
+
+  <script>
+    // Khởi tạo âm thanh trực tiếp qua Web Audio API (không phụ thuộc vào file ngoài)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'correct') {
+        // Âm thanh tinh ting khi đúng
+        const now = audioCtx.currentTime;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now); // Nốt C5
+        osc.frequency.setValueAtTime(659.25, now + 0.1); // Nốt E5
+        osc.frequency.setValueAtTime(783.99, now + 0.2); // Nốt G5
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
+      } else if (type === 'wrong') {
+        // Âm thanh trầm báo sai
+        const now = audioCtx.currentTime;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.setValueAtTime(130, now + 0.15);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      }
+    }
+
+    // Bảng đáp án chuẩn
+    const ANSWERS = {
+      0: "B", 1: "C", 2: "A", 3: "C", 4: "B",
+      5: "A", 6: "B", 7: "D", 8: "B", 9: "C"
+    };
+
+    let currentIndex = 0;
+    let completedCount = 0;
+    let isCurrentCorrect = false;
+
+    const welcomeSec = document.getElementById('welcome');
+    const gameSec = document.getElementById('game');
+    const resultSec = document.getElementById('result-screen');
+    const startBtn = document.getElementById('start-button');
+    const counterEl = document.getElementById('counter');
+    const scoreEl = document.getElementById('score');
+    const progressFill = document.getElementById('progress-fill');
+    const chipEl = document.getElementById('question-chip');
+    const panels = document.querySelectorAll('.question-panel');
+    const feedbackEl = document.getElementById('feedback');
+    const actionBar = document.getElementById('action-bar');
+    const nextBtn = document.getElementById('next-btn');
+    const restartBtn = document.getElementById('restart-btn');
+
+    startBtn.addEventListener('click', () => {
+      welcomeSec.classList.add('hidden');
+      gameSec.classList.remove('hidden');
+      showQuestion(0);
+    });
+
+    function showQuestion(index) {
+      currentIndex = index;
+      isCurrentCorrect = false;
+      counterEl.textContent = `Câu ${index + 1} / 10`;
+      chipEl.textContent = `CÂU ${String(index + 1).padStart(2, '0')}`;
+      
+      panels.forEach((panel, idx) => {
+        if (idx === index) {
+          panel.classList.remove('hidden');
+        } else {
+          panel.classList.add('hidden');
+        }
+      });
+
+      feedbackEl.classList.add('hidden');
+      actionBar.classList.add('hidden');
+
+      if (index === 9) {
+        nextBtn.textContent = 'Hoàn thành ★';
+      } else {
+        nextBtn.textContent = 'Câu tiếp theo →';
+      }
+    }
+
+    document.querySelectorAll('.option').forEach(btn => {
+      btn.addEventListener('click', function() {
+        if (isCurrentCorrect) return; // Nếu đã trả lời đúng câu này rồi thì ngưng
+
+        const panel = this.closest('.question-panel');
+        const qIdx = parseInt(panel.dataset.question, 10);
+        const selected = this.dataset.choice;
+        const correctChoice = ANSWERS[qIdx];
+
+        if (selected === correctChoice) {
+          // Xử lý khi ĐÚNG
+          playSound('correct');
+          this.classList.remove('wrong');
+          this.classList.add('correct');
+          this.querySelector('.option-mark').textContent = '✓';
+          
+          feedbackEl.textContent = 'Chính xác! Bấm nút bên dưới để chuyển câu tiếp theo.';
+          feedbackEl.className = 'feedback good rounded-xl px-5 py-3 mt-6';
+          
+          isCurrentCorrect = true;
+          completedCount++;
+          scoreEl.textContent = `${completedCount} / 10`;
+          progressFill.style.width = `${(completedCount / 10) * 100}%`;
+
+          // Khóa tất cả các nút của câu hiện tại khi đã đúng
+          panel.querySelectorAll('.option').forEach(opt => opt.disabled = true);
+          
+          feedbackEl.classList.remove('hidden');
+          actionBar.classList.remove('hidden');
+        } else {
+          // Xử lý khi SAI (không hiện đáp án đúng, cho phép thử lại)
+          playSound('wrong');
+          this.classList.add('wrong');
+          this.disabled = true; // Khóa riêng nút chọn sai
+          this.querySelector('.option-mark').textContent = '✗';
+          
+          feedbackEl.textContent = 'Chưa chính xác! Hãy thử chọn lại một phương án khác.';
+          feedbackEl.className = 'feedback bad rounded-xl px-5 py-3 mt-6';
+          feedbackEl.classList.remove('hidden');
+        }
+      });
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentIndex < 9) {
+        showQuestion(currentIndex + 1);
+      } else {
+        gameSec.classList.add('hidden');
+        resultSec.classList.remove('hidden');
+      }
+    });
+
+    restartBtn.addEventListener('click', () => {
+      completedCount = 0;
+      currentIndex = 0;
+      isCurrentCorrect = false;
+      scoreEl.textContent = '0 / 10';
+      progressFill.style.width = '0%';
+
+      document.querySelectorAll('.option').forEach(opt => {
+        opt.disabled = false;
+        opt.classList.remove('correct', 'wrong');
+        opt.querySelector('.option-mark').textContent = '';
+      });
+
+      resultSec.classList.add('hidden');
+      welcomeSec.classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>
